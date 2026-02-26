@@ -1,0 +1,12 @@
+body {
+    background-color: #f8d8d9;
+    color: #e60012; /* bKash red */
+}
+
+h1 {
+    color: #e60012;
+}
+
+.payment-option {
+    border: 2px solid #e60012;
+}
