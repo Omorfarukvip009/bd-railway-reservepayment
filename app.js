@@ -1,5 +1,5 @@
 // ✅ PUT YOUR bKASH NUMBER HERE:
-const BKASH_NUMBER = "+8801625166946";
+const BKASH_NUMBER = "01318599494";
 
 // Optional reference
 const DEFAULT_REFERENCE = "RAIL-PAY";
