@@ -4,10 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Railway Payment Portal</title>
-  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ FIX: Use correct relative path + cache-bust -->
+  <link rel="stylesheet" href="./styles.css?v=1" />
 </head>
 <body>
-  <!-- Top Bar -->
   <header class="topbar">
     <div class="container topbar__row">
       <div class="brand">
@@ -23,7 +24,7 @@
         </div>
         <div class="brand__text">
           <div class="brand__title">Railway Payment Portal</div>
-          <div class="brand__sub">Payment Verification • Secure Processing</div>
+          <div class="brand__sub">Secure Payment Submission & Verification</div>
         </div>
       </div>
 
@@ -35,29 +36,27 @@
   </header>
 
   <main class="container">
-    <!-- LANDING -->
+    <!-- HOME -->
     <section id="home" class="card hero">
       <div class="hero__left">
         <h1>Payment Confirmation</h1>
         <p class="muted">
-          Please select a payment method to continue. This portal is intended for payment submission and verification.
+          Please select a payment method to continue. This portal is only for payment submission and verification.
         </p>
 
         <div class="methodGrid">
-          <button id="btnBkash" class="methodCard" type="button" aria-label="Pay with bKash">
+          <button id="btnBkash" class="methodCard" type="button">
             <div class="methodCard__badge">bKash</div>
             <div class="methodCard__title">Proceed with bKash</div>
-            <div class="methodCard__desc">
-              Opens the payment page and starts a 15-minute verification window.
-            </div>
+            <div class="methodCard__desc">Opens payment page and starts a 15-minute window.</div>
           </button>
         </div>
 
         <div class="notice">
           <div class="notice__icon">!</div>
           <div class="notice__text">
-            After continuing, you must complete and submit your bKash Transaction ID within <b>15 minutes</b>.
-            If time expires, you will need to restart the payment process.
+            After continuing, you must submit your bKash Transaction ID within <b>15 minutes</b>.
+            If time expires, restart payment.
           </div>
         </div>
       </div>
@@ -68,7 +67,6 @@
             <div class="railPanel__title">Processing Steps</div>
             <div class="railPanel__pill">Verified</div>
           </div>
-
           <div class="railPanel__body">
             <div class="railRow">
               <div class="railDot"></div>
@@ -97,18 +95,16 @@
       </div>
     </section>
 
-    <!-- PAYMENT PAGE -->
+    <!-- PAYMENT -->
     <section id="payment" class="card pay hidden" aria-live="polite">
       <div class="pay__top">
         <div>
           <div class="pay__title">bKash Payment Submission</div>
-          <div class="muted">
-            Complete the payment and submit your Transaction ID for verification.
-          </div>
+          <div class="muted">Complete payment and submit Transaction ID for verification.</div>
         </div>
 
         <div class="timer" role="status">
-          <div class="timer__label">Verification window</div>
+          <div class="timer__label">Time left</div>
           <div id="timerValue" class="timer__value">15:00</div>
         </div>
       </div>
@@ -173,10 +169,7 @@
           </div>
 
           <div id="status" class="status" aria-live="polite"></div>
-
-          <div class="fineprint">
-            Submitting confirms that the provided Transaction ID and amount match the completed bKash payment.
-          </div>
+          <div class="fineprint">Submitting confirms the details match your completed bKash payment.</div>
         </div>
       </div>
     </section>
@@ -186,6 +179,7 @@
     </footer>
   </main>
 
-  <script src="app.js"></script>
+  <!-- ✅ FIX: correct relative path + cache-bust -->
+  <script src="./app.js?v=1"></script>
 </body>
-              </html>
+            </html>
