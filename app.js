@@ -1,11 +1,11 @@
 // ✅ PUT YOUR bKASH NUMBER HERE:
-const BKASH_NUMBER = "+8801XXXXXXXXX";
+const BKASH_NUMBER = "+8801625166946";
 
 // Optional reference
 const DEFAULT_REFERENCE = "RAIL-PAY";
 
 // Countdown time
-const COUNTDOWN_MINUTES = 15;
+const COUNTDOWN_MINUTES = 10;
 
 const homeSection = document.getElementById("home");
 const paySection = document.getElementById("payment");
