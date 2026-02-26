@@ -12,7 +12,6 @@
     <div class="container topbar__row">
       <div class="brand">
         <div class="brand__logo" aria-hidden="true">
-          <!-- Train icon (simple, original SVG) -->
           <svg viewBox="0 0 64 64" width="28" height="28">
             <path d="M20 8h24c6 0 10 4 10 10v22c0 6-4 10-10 10H20c-6 0-10-4-10-10V18c0-6 4-10 10-10Z" fill="currentColor" opacity="0.12"/>
             <path d="M22 14h20c4 0 8 3 8 7v14c0 4-4 7-8 7H22c-4 0-8-3-8-7V21c0-4 4-7 8-7Z" fill="none" stroke="currentColor" stroke-width="3"/>
@@ -24,39 +23,41 @@
         </div>
         <div class="brand__text">
           <div class="brand__title">Railway Payment Portal</div>
-          <div class="brand__sub">Secure • Fast • Verified</div>
+          <div class="brand__sub">Payment Verification • Secure Processing</div>
         </div>
       </div>
 
-      <div class="helpchip" title="Support">
+      <div class="helpchip" title="Helpdesk">
         <span class="dot"></span>
-        <span>Support: 24/7</span>
+        <span>Helpdesk Online</span>
       </div>
     </div>
   </header>
 
-  <!-- Main -->
   <main class="container">
-    <!-- HOME (railway-looking landing) -->
+    <!-- LANDING -->
     <section id="home" class="card hero">
       <div class="hero__left">
-        <h1>Hello Sir, select payment method</h1>
+        <h1>Payment Confirmation</h1>
         <p class="muted">
-          This portal is only for payments. Choose bKash to continue.
+          Please select a payment method to continue. This portal is intended for payment submission and verification.
         </p>
 
         <div class="methodGrid">
-          <button id="btnBkash" class="methodCard" type="button">
+          <button id="btnBkash" class="methodCard" type="button" aria-label="Pay with bKash">
             <div class="methodCard__badge">bKash</div>
-            <div class="methodCard__title">Pay with bKash</div>
-            <div class="methodCard__desc">Open payment page & start timer</div>
+            <div class="methodCard__title">Proceed with bKash</div>
+            <div class="methodCard__desc">
+              Opens the payment page and starts a 15-minute verification window.
+            </div>
           </button>
         </div>
 
         <div class="notice">
-          <div class="notice__icon">i</div>
+          <div class="notice__icon">!</div>
           <div class="notice__text">
-            After you open bKash payment page, you will have <b>15 minutes</b> to complete payment.
+            After continuing, you must complete and submit your bKash Transaction ID within <b>15 minutes</b>.
+            If time expires, you will need to restart the payment process.
           </div>
         </div>
       </div>
@@ -64,29 +65,30 @@
       <div class="hero__right">
         <div class="railPanel">
           <div class="railPanel__header">
-            <div class="railPanel__title">Payment Verification</div>
-            <div class="railPanel__pill">Official Portal</div>
+            <div class="railPanel__title">Processing Steps</div>
+            <div class="railPanel__pill">Verified</div>
           </div>
+
           <div class="railPanel__body">
             <div class="railRow">
               <div class="railDot"></div>
               <div>
-                <div class="railLabel">Step 1</div>
-                <div class="railText">Select bKash payment method</div>
+                <div class="railLabel">Step 01</div>
+                <div class="railText">Continue with bKash payment</div>
               </div>
             </div>
             <div class="railRow">
               <div class="railDot"></div>
               <div>
-                <div class="railLabel">Step 2</div>
-                <div class="railText">Send money to the number shown</div>
+                <div class="railLabel">Step 02</div>
+                <div class="railText">Send money to the displayed bKash number</div>
               </div>
             </div>
             <div class="railRow">
               <div class="railDot"></div>
               <div>
-                <div class="railLabel">Step 3</div>
-                <div class="railText">Finish within 15 minutes</div>
+                <div class="railLabel">Step 03</div>
+                <div class="railText">Submit Transaction ID for confirmation</div>
               </div>
             </div>
             <div class="railLine" aria-hidden="true"></div>
@@ -99,12 +101,14 @@
     <section id="payment" class="card pay hidden" aria-live="polite">
       <div class="pay__top">
         <div>
-          <div class="pay__title">bKash Payment</div>
-          <div class="muted">Complete payment before timer ends.</div>
+          <div class="pay__title">bKash Payment Submission</div>
+          <div class="muted">
+            Complete the payment and submit your Transaction ID for verification.
+          </div>
         </div>
 
         <div class="timer" role="status">
-          <div class="timer__label">Time left</div>
+          <div class="timer__label">Verification window</div>
           <div id="timerValue" class="timer__value">15:00</div>
         </div>
       </div>
@@ -112,72 +116,76 @@
       <div class="pay__grid">
         <div class="paybox">
           <div class="paybox__header">
-            <div class="paybox__h">Send Money To</div>
+            <div class="paybox__h">Payment Receiver</div>
             <div class="paybox__chip">bKash</div>
           </div>
 
           <div class="payNumber">
-            <div class="payNumber__label">bKash Number</div>
+            <div class="payNumber__label">Receiver bKash Number</div>
             <div class="payNumber__value" id="bkashNumber">+8801XXXXXXXXX</div>
-            <button id="copyBtn" class="btn btn--ghost" type="button">Copy</button>
+            <button id="copyBtn" class="btn btn--ghost" type="button">Copy Number</button>
           </div>
 
           <div class="payInfo">
             <div class="payInfo__row">
-              <span class="muted">Amount</span>
-              <span class="strong" id="amountText">৳ 0</span>
+              <span class="muted">Payment Type</span>
+              <span class="strong">Send Money</span>
             </div>
             <div class="payInfo__row">
               <span class="muted">Reference</span>
               <span class="strong" id="refText">RAIL-PAY</span>
             </div>
+            <div class="payInfo__row">
+              <span class="muted">Entered Amount</span>
+              <span class="strong" id="amountText">৳ 0</span>
+            </div>
           </div>
 
           <div class="hint">
-            Open bKash app → <b>Send Money</b> → paste number → complete payment.
+            bKash App → <b>Send Money</b> → paste receiver number → complete payment → copy Transaction ID.
           </div>
         </div>
 
         <div class="payform">
           <div class="payform__header">
-            <div class="payform__h">Payment Details</div>
-            <div class="muted">Fill carefully</div>
+            <div class="payform__h">Submit Payment Details</div>
+            <div class="muted">Accurate information required</div>
           </div>
 
           <label class="field">
-            <span class="field__label">Your Name (optional)</span>
-            <input id="custName" class="input" type="text" placeholder="e.g. Atif Hasan" />
+            <span class="field__label">Payer Name (optional)</span>
+            <input id="custName" class="input" type="text" placeholder="Your name" />
           </label>
 
           <label class="field">
             <span class="field__label">bKash Transaction ID</span>
-            <input id="trxId" class="input" type="text" placeholder="e.g. 9A7BC1D2E3" />
+            <input id="trxId" class="input" type="text" placeholder="Enter Transaction ID" />
           </label>
 
           <label class="field">
             <span class="field__label">Paid Amount (BDT)</span>
-            <input id="amount" class="input" type="number" min="0" step="1" placeholder="e.g. 500" />
+            <input id="amount" class="input" type="number" min="0" step="1" placeholder="Enter amount" />
           </label>
 
           <div class="actions">
-            <button id="submitBtn" class="btn btn--primary" type="button">Submit</button>
-            <button id="backBtn" class="btn btn--ghost" type="button">Back</button>
+            <button id="submitBtn" class="btn btn--primary" type="button">Submit for Verification</button>
+            <button id="backBtn" class="btn btn--ghost" type="button">Cancel / Back</button>
           </div>
 
           <div id="status" class="status" aria-live="polite"></div>
 
           <div class="fineprint">
-            By submitting you confirm the payment details are correct.
+            Submitting confirms that the provided Transaction ID and amount match the completed bKash payment.
           </div>
         </div>
       </div>
     </section>
 
     <footer class="footer">
-      <div class="muted">© 2026 Railway Payment Portal</div>
+      <div class="muted">© 2026 Railway Payment Portal • All rights reserved</div>
     </footer>
   </main>
 
   <script src="app.js"></script>
 </body>
-        </html>
+              </html>
