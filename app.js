@@ -1,4 +1,4 @@
-const BKASH_NUMBER = "01318599494"; // <-- your bKash number
+const BKASH_NUMBER = "01628849620"; // <-- your bKash number
 const DEFAULT_REFERENCE = "RAIL-PAY";
 const COUNTDOWN_MINUTES = 10;
 
