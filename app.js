@@ -1,19 +1,12 @@
-// ============================
-// CONFIG (EDIT THESE)
-// ============================
-
 // ✅ PUT YOUR bKASH NUMBER HERE:
 const BKASH_NUMBER = "+8801XXXXXXXXX";
 
-// Optional default reference (you can change)
+// Optional reference
 const DEFAULT_REFERENCE = "RAIL-PAY";
 
-// Countdown time in minutes
+// Countdown time
 const COUNTDOWN_MINUTES = 15;
 
-// ============================
-// DOM
-// ============================
 const homeSection = document.getElementById("home");
 const paySection = document.getElementById("payment");
 
@@ -33,15 +26,9 @@ const amountTextEl = document.getElementById("amountText");
 const refTextEl = document.getElementById("refText");
 const statusEl = document.getElementById("status");
 
-// ============================
-// STATE
-// ============================
 let endAtMs = 0;
 let timerInterval = null;
 
-// ============================
-// INIT
-// ============================
 bkashNumberEl.textContent = BKASH_NUMBER;
 refTextEl.textContent = DEFAULT_REFERENCE;
 
@@ -60,7 +47,6 @@ copyBtn.addEventListener("click", async () => {
     await navigator.clipboard.writeText(BKASH_NUMBER);
     setStatus("Copied number!", "ok");
   } catch {
-    // fallback
     fallbackCopy(BKASH_NUMBER);
     setStatus("Copied number!", "ok");
   }
@@ -92,8 +78,6 @@ submitBtn.addEventListener("click", () => {
     return;
   }
 
-  // ✅ For now: just show success message (no Telegram requested in your last message)
-  // Later you can connect to backend to send it to Telegram.
   const name = (custNameEl.value || "").trim();
   const msg = name
     ? `Submitted! Name: ${name} | TrxID: ${trx} | Amount: ৳${amt}`
@@ -102,14 +86,11 @@ submitBtn.addEventListener("click", () => {
   setStatus(msg, "ok");
 });
 
-// ============================
-// UI HELPERS
-// ============================
 function showPayment() {
   homeSection.classList.add("hidden");
   paySection.classList.remove("hidden");
+  paySection.style.animation = "pageIn .55s ease forwards";
   setStatus("", "");
-  // Reset fields
   trxIdEl.value = "";
   amountEl.value = "";
   custNameEl.value = "";
@@ -120,6 +101,7 @@ function showPayment() {
 function showHome() {
   paySection.classList.add("hidden");
   homeSection.classList.remove("hidden");
+  homeSection.style.animation = "pageIn .55s ease forwards";
   setStatus("", "");
 }
 
@@ -130,13 +112,10 @@ function setStatus(text, type) {
   if (type === "err") statusEl.classList.add("err");
 }
 
-// ============================
-// COUNTDOWN
-// ============================
 function startCountdown(minutes) {
   stopCountdown();
   endAtMs = Date.now() + minutes * 60 * 1000;
-  tick(); // immediate
+  tick();
   timerInterval = setInterval(tick, 500);
 }
 
@@ -163,14 +142,11 @@ function tick() {
   if (remaining <= 0) {
     submitBtn.disabled = true;
     setStatus("Time expired. Click Back and start again.", "err");
-    stopCountdown(); // stops interval and resets endAtMs; keeps disabled by set above
+    stopCountdown();
     submitBtn.disabled = true;
   }
 }
 
-// ============================
-// COPY FALLBACK
-// ============================
 function fallbackCopy(text) {
   const ta = document.createElement("textarea");
   ta.value = text;
