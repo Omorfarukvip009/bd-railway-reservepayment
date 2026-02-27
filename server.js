@@ -4,78 +4,65 @@ const crypto = require("crypto");
 const { MongoClient } = require("mongodb");
 
 const app = express();
-app.use(express.json({ limit: "100kb" }));
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
-// ================== MongoDB ==================
+// ================= MongoDB FAST CONNECT =================
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.MONGODB_DB || "railway";
-const COLLECTION = process.env.MONGODB_COLLECTION || "settings";
+const DB_NAME = "railway";
+const COLLECTION = "settings";
 
 let mongoClient = null;
+let mongoDb = null;
 
-async function getCollection() {
-  if (!MONGODB_URI) throw new Error("Missing MONGODB_URI");
-
+function initMongo() {
   if (!mongoClient) {
     mongoClient = new MongoClient(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 2000,
+      connectTimeoutMS: 2000,
     });
 
-    try {
-      await mongoClient.connect();
-      console.log("MongoDB connected");
-    } catch (e) {
-      console.log("MongoDB connection delayed...");
-    }
+    mongoClient.connect()
+      .then(client => {
+        mongoDb = client.db(DB_NAME);
+        console.log("MongoDB connected");
+      })
+      .catch(() => {
+        console.log("MongoDB connecting in background...");
+      });
   }
+}
 
-  return mongoClient.db(DB_NAME).collection(COLLECTION);
+async function getCollection() {
+  if (!mongoDb) throw new Error("Mongo not ready");
+  return mongoDb.collection(COLLECTION);
 }
 
 async function getConfig() {
   try {
     const col = await getCollection();
     const doc = await col.findOne({ key: "payment_config" });
-
     if (doc) return doc;
+  } catch {}
 
-    const defaultDoc = {
-      key: "payment_config",
-      bkashNumber: "",
-      payableAmount: 0,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await col.insertOne(defaultDoc);
-    return defaultDoc;
-  } catch {
-    return {
-      bkashNumber: "",
-      payableAmount: 0,
-    };
-  }
+  return {
+    bkashNumber: "",
+    payableAmount: 0
+  };
 }
 
-async function setConfig({ bkashNumber, payableAmount }) {
+async function setConfig(bkashNumber, payableAmount) {
   const col = await getCollection();
   await col.updateOne(
     { key: "payment_config" },
-    {
-      $set: {
-        bkashNumber,
-        payableAmount,
-        updatedAt: new Date().toISOString(),
-      },
-    },
+    { $set: { key:"payment_config", bkashNumber, payableAmount } },
     { upsert: true }
   );
 }
 
-// ================== JWT ==================
+// ================= JWT =================
 function b64url(input) {
   return Buffer.from(input)
     .toString("base64")
@@ -84,17 +71,11 @@ function b64url(input) {
     .replace(/=+$/g, "");
 }
 
-function signToken(payload, secret, ttl = 3600) {
+function signToken(payload, secret) {
   const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const full = { ...payload, iat: now, exp: now + ttl };
+  const data = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
 
-  const h = b64url(JSON.stringify(header));
-  const p = b64url(JSON.stringify(full));
-  const data = `${h}.${p}`;
-
-  const sig = crypto
-    .createHmac("sha256", secret)
+  const sig = crypto.createHmac("sha256", secret)
     .update(data)
     .digest("base64")
     .replace(/\+/g, "-")
@@ -106,122 +87,115 @@ function signToken(payload, secret, ttl = 3600) {
 
 function verifyToken(token, secret) {
   try {
-    const [h, p, sig] = token.split(".");
+    const [h,p,s] = token.split(".");
     const data = `${h}.${p}`;
 
-    const expected = crypto
-      .createHmac("sha256", secret)
+    const expected = crypto.createHmac("sha256", secret)
       .update(data)
       .digest("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/g, "");
+      .replace(/\+/g,"-")
+      .replace(/\//g,"_")
+      .replace(/=+$/g,"");
 
-    if (expected !== sig) return null;
-
-    const payload = JSON.parse(
-      Buffer.from(p.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString()
-    );
-
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-
-    return payload;
+    if(expected !== s) return false;
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
 function parseCookies(req) {
   const raw = req.headers.cookie || "";
   const out = {};
-  raw.split(";").forEach(part => {
-    const [k, ...v] = part.trim().split("=");
-    if (!k) return;
-    out[k] = decodeURIComponent(v.join("=") || "");
+  raw.split(";").forEach(p=>{
+    const [k,v]=p.trim().split("=");
+    out[k]=v;
   });
   return out;
 }
 
-// ================== ADMIN LOGIN ==================
-app.post("/api/admin/login", (req, res) => {
-  const email = req.body.email;
-  const pass = req.body.password;
-
-  if (
-    email !== process.env.ADMIN_EMAIL ||
-    pass !== process.env.ADMIN_PASSWORD
-  ) {
-    return res.status(401).json({ ok: false });
+// ================= ADMIN LOGIN =================
+app.post("/api/admin/login", (req,res)=>{
+  if(
+    req.body.email !== process.env.ADMIN_EMAIL ||
+    req.body.password !== process.env.ADMIN_PASSWORD
+  ){
+    return res.status(401).json({ok:false});
   }
 
-  const token = signToken({ sub: "admin" }, process.env.JWT_SECRET, 3600);
+  const token = signToken({admin:true}, process.env.JWT_SECRET);
 
-  res.setHeader(
-    "Set-Cookie",
+  res.setHeader("Set-Cookie",
     `admin_token=${token}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax; Secure`
   );
 
-  res.json({ ok: true });
+  res.json({ok:true});
 });
 
-function requireAdmin(req, res, next) {
+function requireAdmin(req,res,next){
   const token = parseCookies(req).admin_token;
-  const payload = verifyToken(token, process.env.JWT_SECRET);
-  if (!payload) return res.status(401).json({ ok: false });
+  if(!verifyToken(token, process.env.JWT_SECRET))
+    return res.status(401).json({ok:false});
   next();
 }
 
-// ================== ADMIN CONFIG ==================
-app.get("/api/admin/config", requireAdmin, async (req, res) => {
-  const cfg = await getConfig();
-  res.json({ ok: true, config: cfg });
-});
-
-app.put("/api/admin/config", requireAdmin, async (req, res) => {
-  await setConfig(req.body);
-  res.json({ ok: true });
-});
-
-// ================== PUBLIC CONFIG ==================
-app.get("/api/public-config", async (req, res) => {
-  const cfg = await getConfig();
-  res.json({ ok: true, ...cfg });
-});
-
-// ================== TELEGRAM ==================
-app.post("/api/submit", async (req, res) => {
-  const trx = req.body.trxId;
-
-  if (!trx || trx.length < 6) {
-    return res.status(400).json({ ok: false });
+// ================= ADMIN CONFIG =================
+app.get("/api/admin/config", requireAdmin, async (req,res)=>{
+  try{
+    const cfg = await getConfig();
+    res.json({ok:true, config:cfg});
+  }catch{
+    res.json({ok:false});
   }
+});
+
+app.put("/api/admin/config", requireAdmin, async (req,res)=>{
+  try{
+    await setConfig(req.body.bkashNumber, req.body.payableAmount);
+    res.json({ok:true});
+  }catch{
+    res.json({ok:false});
+  }
+});
+
+// ================= PUBLIC CONFIG =================
+app.get("/api/public-config", async (req,res)=>{
+  try{
+    const cfg = await getConfig();
+    res.json({ok:true, ...cfg});
+  }catch{
+    res.json({ok:true, bkashNumber:"", payableAmount:0});
+  }
+});
+
+// ================= TELEGRAM =================
+app.post("/api/submit", async (req,res)=>{
+  const trx = req.body.trxId;
 
   const cfg = await getConfig();
 
   const msg =
-    `New Payment\n` +
-    `TrxID: ${trx}\n` +
-    `bKash: ${cfg.bkashNumber}\n` +
-    `Amount: ৳${cfg.payableAmount}`;
+    `New Payment\nTrxID: ${trx}\nNumber: ${cfg.bkashNumber}\nAmount: ৳${cfg.payableAmount}`;
 
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
+  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
     body: JSON.stringify({
       chat_id: process.env.TELEGRAM_CHAT_ID,
       text: msg
     })
   });
 
-  res.json({ ok: true });
+  res.json({ok:true});
 });
 
-// ================== ADMIN PAGE ==================
+// ================= ADMIN PAGE =================
 app.get("/admin", (req,res)=>{
   res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// ================== START ==================
-app.listen(PORT, () => {
-  console.log("Server running on", PORT);
+// ================= START =================
+app.listen(PORT, ()=>{
+  console.log("Server running fast on", PORT);
+  initMongo(); // background connect
 });
