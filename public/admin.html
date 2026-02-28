@@ -1,109 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Panel</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-
-  <style>
-    body {
-      font-family: Arial;
-      background: #fbf6ea;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .card {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      padding: 12px;
-      width: 100%;
-      background: #c57a2a;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .hidden { display: none; }
-
-  </style>
+<title>Admin Panel</title>
 </head>
 <body>
 
-<div class="card" id="loginCard">
-  <h2>Admin Login</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-  <p id="loginMsg"></p>
-</div>
+<h2>Admin Login</h2>
+<input id="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Password"><br>
+<button onclick="login()">Login</button>
 
-<div class="card hidden" id="panelCard">
-  <h2>Update Payment Settings</h2>
-  <input id="bkash" placeholder="bKash Number">
-  <input id="amount" type="number" placeholder="Amount">
-  <button onclick="save()">Save</button>
-  <p id="saveMsg"></p>
-</div>
+<h2>Update Settings</h2>
+<input id="bkash" placeholder="bKash Number"><br>
+<input id="amount" type="number" placeholder="Amount"><br>
+
+<button onclick="save()">Save</button>
+<button onclick="showSite()">SHOW</button>
+<button onclick="hideSite()">HIDE</button>
 
 <script>
-
 async function login(){
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  const r = await fetch("/api/admin/login", {
+  await fetch("/api/admin/login",{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({email,password})
+    headers:{ "Content-Type":"application/json"},
+    body: JSON.stringify({
+      email:document.getElementById("email").value,
+      password:document.getElementById("password").value
+    })
   });
-
-  if(!r.ok){
-    document.getElementById("loginMsg").innerText="Login Failed";
-    return;
-  }
-
-  document.getElementById("loginCard").classList.add("hidden");
-  document.getElementById("panelCard").classList.remove("hidden");
-  load();
 }
 
-async function load(){
-  const r = await fetch("/api/admin/config");
-  const data = await r.json();
-  document.getElementById("bkash").value = data.config.bkashNumber;
-  document.getElementById("amount").value = data.config.payableAmount;
-}
+async function save(){ await update(true); }
+async function showSite(){ await update(true); }
+async function hideSite(){ await update(false); }
 
-async function save(){
-  const bkashNumber = document.getElementById("bkash").value;
-  const payableAmount = Number(document.getElementById("amount").value);
-
-  const r = await fetch("/api/admin/config",{
+async function update(enabled){
+  await fetch("/api/admin/config",{
     method:"PUT",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({bkashNumber,payableAmount})
+    headers:{ "Content-Type":"application/json"},
+    body: JSON.stringify({
+      bkashNumber:document.getElementById("bkash").value,
+      payableAmount:Number(document.getElementById("amount").value),
+      siteEnabled: enabled
+    })
   });
-
-  document.getElementById("saveMsg").innerText = r.ok ? "Saved!" : "Error";
 }
-
 </script>
 
 </body>
