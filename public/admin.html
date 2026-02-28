@@ -1,51 +1,332 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<title>Admin Panel</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel • Railway Payment</title>
+
+  <!-- Use your existing site theme -->
+  <link rel="stylesheet" href="/styles.css?v=2" />
+
+  <style>
+    /* Small admin-specific polish while keeping your theme */
+    .adminWrap { margin-top: 22px; padding-bottom: 26px; }
+    .adminGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 900px){ .adminGrid{ grid-template-columns: 1fr; } }
+
+    .adminTitle { font-size: 22px; font-weight: 950; margin: 0 0 6px 0; }
+    .adminSub { margin: 0 0 12px 0; }
+    .topActions { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+
+    .badge {
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 12px; border-radius: 999px;
+      border:1px solid rgba(0,0,0,.12);
+      background: rgba(255,255,255,.85);
+      font-weight: 900; font-size: 13px;
+    }
+    .badgeDot{
+      width:10px; height:10px; border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 6px rgba(34,197,94,.18);
+    }
+    .badgeDot.off{
+      background: #ef4444;
+      box-shadow: 0 0 0 6px rgba(239,68,68,.18);
+    }
+
+    .divider { height: 1px; background: rgba(0,0,0,.08); margin: 14px 0; }
+
+    /* Ensure buttons match your style */
+    .btn--danger{
+      background: linear-gradient(90deg, #b91c1c, #ef4444);
+      border-color: transparent;
+      color: #fff;
+    }
+    .btn--success{
+      background: linear-gradient(90deg, #15803d, #22c55e);
+      border-color: transparent;
+      color: #fff;
+    }
+  </style>
 </head>
+
 <body>
+  <!-- Your same header area style will already be in styles.css -->
+  <header class="topbar">
+    <div class="container topbar__row">
+      <div class="brand">
+        <div class="brand__logoImgWrap" aria-hidden="true">
+          <img src="/logo.png" class="brand__logoImg" alt="Logo" />
+        </div>
+        <div class="brand__text">
+          <div class="brand__title">Railway Payment Portal</div>
+          <div class="brand__sub">Admin Control Panel</div>
+        </div>
+      </div>
 
-<h2>Admin Login</h2>
-<input id="email" placeholder="Email"><br>
-<input id="password" type="password" placeholder="Password"><br>
-<button onclick="login()">Login</button>
+      <div class="helpchip" title="Admin">
+        <span class="dot"></span>
+        <span>Admin Console</span>
+      </div>
+    </div>
+  </header>
 
-<h2>Update Settings</h2>
-<input id="bkash" placeholder="bKash Number"><br>
-<input id="amount" type="number" placeholder="Amount"><br>
+  <main class="container adminWrap">
 
-<button onclick="save()">Save</button>
-<button onclick="showSite()">SHOW</button>
-<button onclick="hideSite()">HIDE</button>
+    <!-- LOGIN CARD -->
+    <section id="loginCard" class="card pay">
+      <h2 class="adminTitle">Admin Login</h2>
+      <p class="muted adminSub">Login to update bKash number, amount, and show/hide the website.</p>
 
-<script>
-async function login(){
-  await fetch("/api/admin/login",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body: JSON.stringify({
-      email:document.getElementById("email").value,
-      password:document.getElementById("password").value
-    })
-  });
-}
+      <label class="field">
+        <span class="field__label">Admin Email</span>
+        <input id="email" class="input" type="email" placeholder="omorfaruk@admin.com" autocomplete="username" />
+      </label>
 
-async function save(){ await update(true); }
-async function showSite(){ await update(true); }
-async function hideSite(){ await update(false); }
+      <label class="field">
+        <span class="field__label">Admin Password</span>
+        <input id="password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </label>
 
-async function update(enabled){
-  await fetch("/api/admin/config",{
-    method:"PUT",
-    headers:{ "Content-Type":"application/json"},
-    body: JSON.stringify({
-      bkashNumber:document.getElementById("bkash").value,
-      payableAmount:Number(document.getElementById("amount").value),
-      siteEnabled: enabled
-    })
-  });
-}
-</script>
+      <div class="actions">
+        <button id="loginBtn" class="btn btn--primary" type="button">Login</button>
+        <a class="btn btn--ghost" href="/" style="text-decoration:none; display:inline-flex; align-items:center;">Back to Site</a>
+      </div>
 
+      <div id="loginStatus" class="status" aria-live="polite"></div>
+    </section>
+
+    <!-- PANEL -->
+    <section id="panelCard" class="card pay hidden" aria-live="polite">
+      <div class="pay__top">
+        <div>
+          <div class="adminTitle">Payment Settings</div>
+          <div class="muted">These values appear on the user payment page.</div>
+        </div>
+
+        <div id="siteBadge" class="badge" title="Site status">
+          <span id="siteDot" class="badgeDot"></span>
+          <span id="siteText">Site: ON</span>
+        </div>
+      </div>
+
+      <div class="adminGrid">
+        <div class="paybox">
+          <div class="paybox__header">
+            <div class="paybox__h">Receiver & Amount</div>
+            <div class="paybox__chip">Config</div>
+          </div>
+
+          <label class="field">
+            <span class="field__label">bKash Number</span>
+            <input id="bkashNumber" class="input" type="text" placeholder="+8801..." />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Payable Amount (BDT)</span>
+            <input id="payableAmount" class="input" type="number" min="1" step="1" placeholder="e.g. 500" />
+          </label>
+
+          <div class="divider"></div>
+
+          <div class="topActions">
+            <button id="loadBtn" class="btn btn--ghost" type="button">Load</button>
+            <button id="saveBtn" class="btn btn--primary" type="button">Save</button>
+          </div>
+
+          <div id="panelStatus" class="status" aria-live="polite"></div>
+        </div>
+
+        <div class="payform">
+          <div class="payform__header">
+            <div class="payform__h">Website Visibility</div>
+            <div class="muted">Control what users see at “/”.</div>
+          </div>
+
+          <div class="notice" style="margin-top: 10px;">
+            <div class="notice__icon">!</div>
+            <div class="notice__text">
+              <b>HIDE</b> will show users a <b>404 ERROR</b> page on the homepage.
+              <br/>Use <b>SHOW</b> to restore normal site.
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top: 12px;">
+            <button id="showBtn" class="btn btn--success" type="button">SHOW</button>
+            <button id="hideBtn" class="btn btn--danger" type="button">HIDE</button>
+            <button id="logoutBtn" class="btn btn--ghost" type="button">Logout</button>
+          </div>
+
+          <div class="fineprint">
+            Tip: After changing settings, open the homepage in a new tab to verify.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="muted">© 2026 Railway Payment Portal • Admin</div>
+    </footer>
+  </main>
+
+  <script>
+    const loginCard = document.getElementById("loginCard");
+    const panelCard = document.getElementById("panelCard");
+
+    const emailEl = document.getElementById("email");
+    const passEl = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginStatus = document.getElementById("loginStatus");
+
+    const loadBtn = document.getElementById("loadBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const showBtn = document.getElementById("showBtn");
+    const hideBtn = document.getElementById("hideBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    const bkashEl = document.getElementById("bkashNumber");
+    const amountEl = document.getElementById("payableAmount");
+    const panelStatus = document.getElementById("panelStatus");
+
+    const siteDot = document.getElementById("siteDot");
+    const siteText = document.getElementById("siteText");
+
+    function setStatus(el, msg, type){
+      el.textContent = msg || "";
+      el.classList.remove("ok","err");
+      if(type === "ok") el.classList.add("ok");
+      if(type === "err") el.classList.add("err");
+    }
+
+    function setSiteBadge(enabled){
+      if(enabled){
+        siteDot.classList.remove("off");
+        siteText.textContent = "Site: ON";
+      } else {
+        siteDot.classList.add("off");
+        siteText.textContent = "Site: OFF";
+      }
+    }
+
+    async function api(path, method, body){
+      const res = await fetch(path, {
+        method,
+        headers: { "Content-Type":"application/json" },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await res.json().catch(()=> ({}));
+      return { res, data };
+    }
+
+    async function tryAutoLogin(){
+      // If cookie exists, this will succeed and show panel
+      const {res, data} = await api("/api/admin/config", "GET");
+      if(res.ok && data.ok){
+        loginCard.classList.add("hidden");
+        panelCard.classList.remove("hidden");
+        bkashEl.value = data.config.bkashNumber || "";
+        amountEl.value = data.config.payableAmount ?? "";
+        setSiteBadge(data.config.siteEnabled !== false);
+        setStatus(panelStatus, "Loaded.", "ok");
+      }
+    }
+
+    loginBtn.addEventListener("click", async ()=>{
+      setStatus(loginStatus, "Logging in...", "");
+      const email = (emailEl.value || "").trim();
+      const password = (passEl.value || "").trim();
+
+      const {res, data} = await api("/api/admin/login", "POST", { email, password });
+      if(!res.ok || !data.ok){
+        setStatus(loginStatus, "Login failed. Check email/password.", "err");
+        return;
+      }
+
+      setStatus(loginStatus, "Login success.", "ok");
+      loginCard.classList.add("hidden");
+      panelCard.classList.remove("hidden");
+      await loadConfig();
+    });
+
+    async function loadConfig(){
+      setStatus(panelStatus, "Loading...", "");
+      const {res, data} = await api("/api/admin/config", "GET");
+      if(!res.ok || !data.ok){
+        setStatus(panelStatus, "Load failed. Please login again.", "err");
+        return;
+      }
+      bkashEl.value = data.config.bkashNumber || "";
+      amountEl.value = data.config.payableAmount ?? "";
+      setSiteBadge(data.config.siteEnabled !== false);
+      setStatus(panelStatus, "Loaded.", "ok");
+    }
+
+    loadBtn.addEventListener("click", loadConfig);
+
+    saveBtn.addEventListener("click", async ()=>{
+      setStatus(panelStatus, "Saving...", "");
+      const bkashNumber = (bkashEl.value || "").trim();
+      const payableAmount = Number(amountEl.value || 0);
+
+      if(!bkashNumber || bkashNumber.length < 8){
+        setStatus(panelStatus, "Enter a valid bKash number.", "err");
+        return;
+      }
+      if(!Number.isFinite(payableAmount) || payableAmount <= 0){
+        setStatus(panelStatus, "Enter a valid amount.", "err");
+        return;
+      }
+
+      // Keep current visibility state (read it from badge)
+      const siteEnabled = !siteDot.classList.contains("off");
+
+      const {res, data} = await api("/api/admin/config", "PUT", { bkashNumber, payableAmount, siteEnabled });
+      if(!res.ok || !data.ok){
+        setStatus(panelStatus, "Save failed.", "err");
+        return;
+      }
+      setStatus(panelStatus, "Saved successfully!", "ok");
+    });
+
+    showBtn.addEventListener("click", async ()=>{
+      setStatus(panelStatus, "Turning site ON...", "");
+      const bkashNumber = (bkashEl.value || "").trim();
+      const payableAmount = Number(amountEl.value || 0);
+
+      const {res, data} = await api("/api/admin/config", "PUT", { bkashNumber, payableAmount, siteEnabled: true });
+      if(!res.ok || !data.ok){
+        setStatus(panelStatus, "Failed to show site.", "err");
+        return;
+      }
+      setSiteBadge(true);
+      setStatus(panelStatus, "Site is now ON.", "ok");
+    });
+
+    hideBtn.addEventListener("click", async ()=>{
+      setStatus(panelStatus, "Turning site OFF...", "");
+      const bkashNumber = (bkashEl.value || "").trim();
+      const payableAmount = Number(amountEl.value || 0);
+
+      const {res, data} = await api("/api/admin/config", "PUT", { bkashNumber, payableAmount, siteEnabled: false });
+      if(!res.ok || !data.ok){
+        setStatus(panelStatus, "Failed to hide site.", "err");
+        return;
+      }
+      setSiteBadge(false);
+      setStatus(panelStatus, "Site is now OFF (homepage shows 404).", "ok");
+    });
+
+    logoutBtn.addEventListener("click", async ()=>{
+      // optional: if you later add /api/admin/logout, you can call it here.
+      // For now, just clear UI and ask admin to clear cookies by closing browser if needed.
+      loginCard.classList.remove("hidden");
+      panelCard.classList.add("hidden");
+      setStatus(loginStatus, "Logged out (close browser to clear session if needed).", "");
+    });
+
+    // Auto-check if already logged in
+    tryAutoLogin();
+  </script>
 </body>
-</html>
+              </html>
